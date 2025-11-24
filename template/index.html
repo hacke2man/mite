@@ -1,0 +1,121 @@
+<!doctype html>
+<html>
+	<head>
+		<meta name=viewport content="width=device-width,initial-scale=1.0">
+		<script type='text/javascript'>
+			{{.Jse}}
+			let session = sig({
+				loggedIn: false,
+				id: '',
+			});
+			let localSession = localStorage.getItem('session_id');
+			if (localSession) {
+				session.v = {
+					loggedIn: true,
+					id: localSession,
+				}
+			}
+
+			{{.Comps}}
+			{{.Util}}
+			let localSplit = localStorage.getItem('split');
+			let split = sig(localSplit==null?false:JSON.parse(localSplit));
+			let setSplit = _=> localStorage.setItem('split', split.v.toString());
+			setSplit();
+			split.sub(setSplit);
+			let overlay = sig(undefined);
+			let localDark = localStorage.getItem("dark");
+			if(localDark==null) {
+				localDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+				localStorage.setItem('dark', localDark);
+			} else {
+				localDark = localDark == 'true';
+			}
+			darkTheme = sig(localDark);
+			setTheme = dark => {
+				localStorage.setItem('dark', dark);
+				setRootStyle(dark?
+					{
+						'--pri': 'hsl(170,4%,8%)',
+						'--sec': 'hsl(13,45%,40%)',
+						'--tex': 'hsl(50,70%,90%)',
+					}:
+					{
+						'--pri': 'hsl(50,70%,90%)',
+						'--sec': 'hsl(300, 20%, 60%)',
+						'--tex': 'hsl(40,20%,8%)',
+					})
+			}
+			setTheme(darkTheme.v);
+			darkTheme.sub(setTheme)
+			addEventListener('DOMContentLoaded',_=>{
+				let app = document.getElementById('app');
+				htmc([
+					{ tag: 'button',
+						style: {
+							position: 'fixed',
+							top: 0,
+							left: 0,
+							width: '100vw',
+							height: '100vh',
+							background: 'hsla(0, 0%, 0%, 40%)',
+						},
+						onclick: e => overlay.v = undefined,
+						run: el => {
+							let hide = _=> el.hidden = overlay.v? false: true;
+							overlay.sub(hide);
+							hide();
+						}
+					},
+					{ inner: esub(e => ({
+						inner: overlay.v,
+						hidden: !overlay.v,
+						style: {
+							position: 'fixed',
+							top: '50%',
+							left: '50%',
+							transform: 'translate(-50%, -50%)',
+						},
+					}), [overlay])},
+					{ tag: 'nav',
+						inner: [
+							{ tag: 'a-btn', to: '/', inner: location.host.split(/([^.]*)/)[1],
+								style: {
+									color: 'var(--sec)',
+									fontSize: '1.7rem',
+								},
+							},
+							{
+								inner: [
+								{tag: 'button',
+									inner: 'toggle split',
+									onclick: _=> split.v = !split.v
+								},
+								{tag: 'button',
+									inner: esub(_=>darkTheme.v? 'dark':'light', [darkTheme]),
+									onclick: _=> darkTheme.v = !darkTheme.v,
+								}
+							],
+								style: {
+									display: 'flex',
+									gap: '.5rem',
+								}
+							}
+						],
+						style: {
+							height: '3rem',
+							display: 'flex',
+							alignItems: 'center',
+							justifyContent: 'space-between',
+						},
+					},
+					{ id:'content' },
+				], app);
+				route(location.pathname);
+				slot=document.getElementById('page');
+			});
+		</script>
+	</head>
+	<body id=app></body>
+</html>
+<style>{{.CSS}}</style>
