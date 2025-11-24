@@ -2,6 +2,8 @@
 
 ```sh
 go mod tidy
-go run . user yourusername password
+go run . user username password
 HOST=":yourport" go run .
+# logging in looks like user.localhost:yourport
+# then you can paste your password into the login field
 ```
